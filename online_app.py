@@ -1,137 +1,187 @@
 import streamlit as st
 import pandas as pd
-import requests
 from datetime import datetime
 
 # =====================================================================
-# НАСТРОЙКИ СТИЛЯ И ИНТЕРФЕЙСА В СТИЛЕ ORBITER
+# НАСТРОЙКИ СТИЛЯ "DARKNETER / МИНИМАЛИЗМ"
 # =====================================================================
 st.set_page_config(
-    page_title="Orbiter Control Center - Трекер",
+    page_title="Darkneter Control Center",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Внедряем CSS-стили для полной имитации интерфейса Orbiter (темный фон, шрифты, границы)
+# Профессиональный минималистичный темный стиль без лишних рамок
 st.markdown("""
     <style>
-        /* Общий фон страницы и текст */
         .stApp {
-            background-color: #0b0c10;
-            color: #c5c6c7;
+            background-color: #0d0f12;
+            color: #9cd1bb;
         }
-        /* Боковое меню */
         section[data-testid="stSidebar"] {
-            background-color: #1f2833;
-            border-right: 1px solid #45a29e;
+            background-color: #13171c;
+            border-right: 1px solid #1f262e;
         }
-        /* Стилизация заголовков */
+        /* Кастомизация кнопок меню, чтобы они выглядели строго */
+        .stButton>button {
+            width: 100%;
+            background-color: #1c232b;
+            color: #ffffff;
+            border: 1px solid #2d3846;
+            text-align: left;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .stButton>button:hover {
+            border-color: #00ff88;
+            color: #00ff88;
+        }
         h1, h2, h3 {
+            font-family: 'Courier New', monospace;
             color: #ffffff !important;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-        /* Фирменная разделительная линия */
         hr {
-            border-color: #333b4d !important;
+            border-color: #1f262e !important;
         }
     </style>
 """, unsafe_allow_html=True)
 
 # =====================================================================
-# НАСТРОЙКИ ДАННЫХ (Подставьте ваши столбцы из Excel FB)
+# НАСТРОЙКИ НАЗВАНИЙ СТОЛБЦОВ ДЛЯ МАТЧИНГА
 # =====================================================================
-КОЛОНКА_ИМЯ_КАМПАНИИ = "Название кампании"  # Столбец из FB (например, d8x_BK_FB_LSA...)
-КОЛОНКА_РАСХОДЫ = "Потрачено (USD)"       # Столбец из FB с расходами (Cost)
+КОЛОНКА_ИМЯ_КАМПАНИИ = "Название кампании"
+КОЛОНКА_РАСХОДЫ = "Потрачено (USD)"
 
 # =====================================================================
-# ФУНКЦИЯ ДЛЯ ЗАПРОСА В API ORBITER
+# ЛЕВАЯ ПАНЕЛЬ: МЕНЮ И ПОЛНЫЙ ЦИКЛ ЗАПУСКА
 # =====================================================================
-def получить_данные_трекера(target_date):
-    """Имитация запроса к API Orbiter для получения офферов и покупок"""
-    # В будущем здесь будет реальный requests.post к вашему бэкенду
-    # Сейчас возвращаем демо-данные, отформатированные точно как на скрине
-    demo_data = [
-        {"Имя_Кампании": "c5p_BK_AAE_TR_tr_AG14_s5_rk1_16.10_s6", "STATUS_PK": "🟢", "OFFERS_QL": "c5p_BK_AAE_TR_tr_AG14... 100% (11/0)", "PURCHASES": 0},
-        {"Имя_Кампании": "c5p_BK_BKVD_PL_pl_AG14_ql1_rk1_05.10_s1", "STATUS_PK": "🟢", "OFFERS_QL": "c5p_BK_BKVD_PL_pl_AG14... 100% (15/4)", "PURCHASES": 1},
-        {"Имя_Кампании": "c5p_BK_AAE_TR_tr_AG14_s5_rk2_16.10_s7", "STATUS_PK": "🟢", "OFFERS_QL": "c5p_BK_AAE_TR_tr_AG14... 100% (7/0)", "PURCHASES": 0},
-        {"Имя_Кампании": "d8x_BK_FB_LSA_US_es_s7_AG14_rk1_scr1", "STATUS_PK": "🟢", "OFFERS_QL": "d8x_BK_FB_LSA_US_es_s7... 100% (6/0)", "PURCHASES": 0},
-    ]
-    return pd.DataFrame(demo_data)
+# Вставляем иконку ноутбука (💻) в левый верхний угол
+st.sidebar.markdown("## 💻 **DARKNETER CC**")
+st.sidebar.markdown("<small style='color:#566275;'>v2.0 // Полный цикл</small>", unsafe_allow_html=True)
+st.sidebar.write("---")
+
+# Создаем переключатель разделов приложения
+st.sidebar.write("### 🧭 Навигация")
+раздел = st.sidebar.radio(
+    label="Выберите инструмент:",
+    options=[
+        "🎯 1. Трекер и Аналитика",
+        "📦 2. Офферы",
+        "🔗 3. Создание ссылок (TDS)",
+        "🎨 4. Создание креативов",
+        "🚀 5. Полный цикл запуска"
+    ],
+    label_visibility="collapsed"
+)
+
+st.sidebar.write("---")
+# Вынесли выбор даты в боковое меню под навигацию
+выбранная_дата = st.sidebar.date_input("📅 Дата анализа:", datetime.now()).strftime("%Y-%m-%d")
 
 # =====================================================================
-# ЭКРАН ПАНЕЛИ УПРАВЛЕНИЯ
+# ПРАВАЯ ПАНЕЛЬ: ЛОГИКА ОТОБРАЖЕНИЯ РАЗДЕЛОВ
 # =====================================================================
 
-# Меню управления слева
-st.sidebar.title("🛸 Orbiter CC")
-st.sidebar.write("### Панель управления")
-выбранная_дата = st.sidebar.date_input("📅 Выберите дату", datetime.now()).strftime("%Y-%m-%d")
-uploaded_file = st.sidebar.file_uploader("📥 Загрузить спенд FB (.xlsx)", type=["xlsx", "xls"])
-
-# Главное окно трекера
-st.title("🛸 Трекер")
-st.write(f"### Аналитика за неделю/день — `{выбранная_дата}`")
-st.write("---")
-
-if uploaded_file is not None:
-    # Загружаем спенд из файла
-    df_fb = pd.read_excel(uploaded_file)
+# --- РАЗДЕЛ 1: ТРЕКЕР И АНАЛИТИКА ---
+if раздел == "🎯 1. Трекер и Аналитика":
+    st.title("🎯 Трекер и Сведение Статистики")
+    st.write(f"Сведение данных за: `{выбранная_дата}`")
+    st.write("---")
     
-    if КОЛОНКА_ИМЯ_КАМПАНИИ in df_fb.columns and КОЛОНКА_РАСХОДЫ in df_fb.columns:
-        # Форматируем траты
-        df_fb = df_fb[[КОЛОНКА_ИМЯ_КАМПАНИИ, КОЛОНКА_РАСХОДЫ]].copy()
-        df_fb.columns = ["CAMPAIGN", "COST"]
-        df_fb = df_fb.groupby("CAMPAIGN", as_index=False)["COST"].sum()
+    # Блок одновременной подгрузки данных (FB + Партнерка)
+    st.subheader("📥 Входные данные для анализа")
+    
+    col_left, col_right = st.columns(2)
+    
+    with col_left:
+        st.markdown("### 📘 Расходы (Facebook)")
+        uploaded_fb = st.file_uploader("Перетащите Excel со спендом FB", type=["xlsx", "xls"], key="fb_upload")
         
-        # Запрашиваем данные трекера (статусы, офферы, покупки)
-        df_tracker = получить_данные_трекера(выбранная_дата)
-        
-        # Склеиваем таблицы по названию кампании
-        # Имена колонок приведены в точное соответствие с вашим интерфейсом Orbiter
-        df_final = pd.merge(df_fb, df_tracker, left_on="CAMPAIGN", right_on="Имя_Кампании", how="outer")
-        
-        # Если кампании нет в выгрузках, заполняем пропуски дефолтными значениями
-        df_final["STATUS_PK"] = df_final["STATUS_PK"].fillna("⚪")
-        df_final["OFFERS_QL"] = df_final["OFFERS_QL"].fillna("Нет данных")
-        df_final["COST"] = df_final["COST"].fillna(0.0)
-        df_final["PURCHASES"] = df_final["PURCHASES"].fillna(0).astype(int)
-        
-        # Формируем точный порядок колонок, как на скриншоте Orbiter
-        df_final = df_final[["CAMPAIGN", "STATUS_PK", "OFFERS_QL", "COST", "PURCHASES"]]
-        
-        # Сортируем по расходам (от больших к меньшим), как принято в арбитражных таблицах
-        df_final = df_final.sort_values(by="COST", ascending=False)
-        
-        # Считаем строку Total (Итого) в самом низу
-        total_cost = df_final["COST"].sum()
-        total_purchases = df_final["PURCHASES"].sum()
-        
-        row_total = pd.DataFrame([{
-            "CAMPAIGN": f"Total ({len(df_final)} РК)",
-            "STATUS_PK": "📊",
-            "OFFERS_QL": "—",
-            "COST": total_cost,
-            "PURCHASES": total_purchases
-        }])
-        
-        df_final = pd.concat([df_final, row_total], ignore_index=True)
-        
-        # Вывод таблицы в оригинальном строгом стиле
-        st.dataframe(
-            df_final,
-            use_container_width=True,
-            column_config={
-                "CAMPAIGN": st.column_config.TextColumn("CAMPAIGN"),
-                "STATUS_PK": st.column_config.TextColumn("STATUS PK"),
-                "OFFERS_QL": st.column_config.TextColumn("ОФФЕРЫ QL"),
-                "COST": st.column_config.NumberColumn("COST \(", format="\)%.2f"),
-                "PURCHASES": st.column_config.NumberColumn("PURCHASES 🛒")
-            },
-            hide_index=True
-        )
-        
-    else:
-        st.error(f"Колонки файла не совпадают! Проверьте, есть ли '{КОЛОНКА_ИМЯ_КАМПАНИИ}' и '{КОЛОНКА_РАСХОДЫ}'")
-else:
-    st.info("Пожалуйста, загрузите `.xlsx` отчет с расходами Facebook в левой панели для отображения таблицы кампаний.")
+    with col_right:
+        st.markdown("### 📗 Доходы (Партнерка / CRM)")
+        uploaded_pa = st.file_uploader("Перетащите Excel/CSV из партнерки", type=["xlsx", "xls", "csv"], key="pa_upload")
 
+    # Логика обработки, когда загружены ОБА файла
+    if uploaded_fb is not None and uploaded_pa is not None:
+        st.success("⚡ Оба файла успешно загружены! Начинаю сопоставление...")
+        
+        # 1. Читаем расходы FB
+        df_fb = pd.read_excel(uploaded_fb)
+        
+        # 2. Читаем доходы партнерки
+        if uploaded_pa.name.endswith('.csv'):
+            df_pa = pd.read_csv(uploaded_pa)
+        else:
+            df_pa = pd.read_excel(uploaded_pa)
+            
+        # Проверка структуры файлов
+        if КОЛОНКА_ИМЯ_КАМПАНИИ in df_fb.columns:
+            # Обработка FB
+            df_fb = df_fb[[КОЛОНКА_ИМЯ_КАМПАНИИ, КОЛОНКА_РАСХОДЫ]].copy()
+            df_fb.columns = ["CAMPAIGN", "COST"]
+            df_fb = df_fb.groupby("CAMPAIGN", as_index=False)["COST"].sum()
+            
+            # Предположим, в выгрузке партнерки колонки называются "Campaign" и "Revenue"
+            # Вы можете изменить названия ниже под ваш файл партнерки
+            col_pa_name = "Campaign" if "Campaign" in df_pa.columns else df_pa.columns[0]
+            col_pa_rev = "Revenue" if "Revenue" in df_pa.columns else df_pa.columns[1]
+            
+            df_pa = df_pa[[col_pa_name, col_pa_rev]].copy()
+            df_pa.columns = ["CAMPAIGN", "REVENUE"]
+            df_pa = df_pa.groupby("CAMPAIGN", as_index=False)["REVENUE"].sum()
+            
+            # МАТЧИНГ (Сведение данных)
+            df_final = pd.merge(df_fb, df_pa, on="CAMPAIGN", how="outer").fillna(0)
+            
+            # Вычисления математики
+            df_final["PROFIT"] = df_final["REVENUE"] - df_final["COST"]
+            df_final["ROI %"] = df_final.apply(lambda r: (r["PROFIT"] / r["COST"] * 100) if r["COST"] > 0 else 0, axis=1)
+            
+            df_final = df_final.round(2).sort_values(by="PROFIT", ascending=False)
+            
+            # Вывод итоговой таблицы
+            st.write("### 📊 Итоговый Сводный Отчет")
+            st.dataframe(
+                df_final, 
+                use_container_width=True,
+                hide_index=True,
+                column_config={
+                    "CAMPAIGN": "Название Кампании",
+                    "COST": st.column_config.NumberColumn("Расход FB (\$)", format="\$%.2f"),
+                    "REVENUE": st.column_config.NumberColumn("Доход ПП (\$)", format="\$%.2f"),
+                    "PROFIT": st.column_config.NumberColumn("Профит (\$)", format="\$%.2f"),
+                    "ROI %": st.column_config.NumberColumn("ROI", format="%.1f%%")
+                }
+            )
+        else:
+            st.error("В файле Facebook не найден столбец 'Название кампании'!")
+            
+    elif uploaded_fb is not None or uploaded_pa is not None:
+        st.warning("⚠️ Для расчета общего ROI необходимо загрузить оба файла одновременно (и спенд, и ревеню).")
+    else:
+        st.info("💡 Загрузите отчеты в панели выше, чтобы софт автоматически рассчитал профит по каждой связке.")
+
+# --- ОСТАЛЬНЫЕ ВТАКЛАДКИ ДЛЯ ПОЛНОГО ЦИКЛА ЗАПУСКА (Заглушки для будущего кода) ---
+elif раздел == "📦 2. Офферы":
+    st.title("📦 Менеджер Офферов")
+    st.write("Здесь будет список подключенных офферов, гео, ставок и рекламодателей.")
+    st.text_input("Поиск активного оффера:")
+    
+elif раздел == "🔗 3. Создание ссылок (TDS)":
+    st.title("🔗 Конструктор потоков и Клоакинг")
+    st.write("Генератор безопасных ссылок распределения трафика (TDS).")
+    st.text_input("Введите целевую ссылку (Safe Page):")
+    st.text_input("Введите black page (Оффер):")
+    st.button("Сгенерировать поток")
+
+elif раздел == "🎨 4. Создание креативов":
+    st.title("🎨 Библиотека и уникализатор креативов")
+    st.write("Инструменты пакетного изменения метаданных картинок и видео перед заливом в FB.")
+    st.file_uploader("Загрузите креатив для очистки метаданных", type=["jpg", "png", "mp4"])
+
+elif раздел == "🚀 5. Полный цикл запуска":
+    st.title("🚀 Автоматизация запуска (Full Cycle)")
+    st.write("Сводный чеклист и автоматизация отправки кампаний в рекламные кабинеты.")
+    st.checkbox("Шаг 1: Проверка прокси и аккаунтов")
+    st.checkbox("Шаг 2: Привязка платежек")
+    st.checkbox("Шаг 3: Прогрев и запуск пролей")
