@@ -202,14 +202,95 @@ if st.session_state.current_page == "🎯 1. Трекер":
     </div>
     """, unsafe_allow_html=True)
     
+    # 1. Поля даты и поиска наверх рабочей зоны
     col_date, col_search, _ = st.columns(3)
     with col_date:
-        st.date_input("📅 Выберите период:", datetime.now(), label_visibility="collapsed")
+        выбранная_дата = st.date_input("📅 Выберите период:", datetime.now(), label_visibility="collapsed").strftime("%Y-%m-%d")
     with col_search:
         st.text_input("🔍 Search campaign...", label_visibility="collapsed", placeholder="Search campaign...")
 
-    st.markdown("<br><br>", unsafe_allow_html=True)
-    st.info("🦴 [Блок 1 Успешно развернут] Скелет Трекера готов. На следующем шаге мы наполним его логикой загрузки файлов.")
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # 2. Два параллельных Drag-and-Drop бокса для импорта файлов
+    st.markdown("### 📥 Импорт данных для сведения ROI")
+    col_fb, col_pa = st.columns(2)
+
+    with col_fb:
+        st.markdown('<div class="upload-box">', unsafe_allow_html=True)
+        uploaded_fb = st.file_uploader("👉 Шаг 1: Загрузить РАСХОДЫ Facebook (.xlsx)", type=["xlsx", "xls"], key="main_fb")
+        st.markdown('</div>', unsafe_allow_html=True)
+        
+    with col_pa:
+        st.markdown('<div class="upload-box">', unsafe_allow_html=True)
+        uploaded_pa = st.file_uploader("👉 Шаг 2: Загрузить ВЫРУЧКУ CRM / Партнерки (.xlsx, .csv)", type=["xlsx", "xls", "csv"], key="main_pa")
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    st.markdown("---")
+
+    # 3. Служебные переменные для матчинга (измени имена столбцов под свой Excel, если нужно)
+    КОЛОНКА_ИМЯ_КАМПАНИИ_FB = "Название кампании"
+    КОЛОНКА_РАСХОДЫ_FB = "Потрачено (USD)"
+
+    # 4. Логика обработки и сведения данных при загрузке обоих отчетов
+    if uploaded_fb is not None and uploaded_pa is not None:
+        df_fb = pd.read_excel(uploaded_fb)
+        df_pa = pd.read_csv(uploaded_pa) if uploaded_pa.name.endswith('.csv') else pd.read_excel(uploaded_pa)
+            
+        if КОЛОНКА_ИМЯ_КАМПАНИИ_FB in df_fb.columns:
+            # Сведение расходов FB
+            df_fb = df_fb[[КОЛОНКА_ИМЯ_КАМПАНИИ_FB, КОЛОНКА_РАСХОДЫ_FB]].copy()
+            df_fb.columns = ["CAMPAIGN", "COST"]
+            df_fb = df_fb.groupby("CAMPAIGN", as_index=False)["COST"].sum()
+            
+            # Автоподбор колонок в файле партнерки
+            pa_name_col = "Campaign" if "Campaign" in df_pa.columns else df_pa.columns[0]
+            pa_rev_col = "Revenue" if "Revenue" in df_pa.columns else df_pa.columns[1]
+            
+            df_pa = df_pa[[pa_name_col, pa_rev_col]].copy()
+            df_pa.columns = ["CAMPAIGN", "REVENUE"]
+            df_pa = df_pa.groupby("CAMPAIGN", as_index=False)["REVENUE"].sum()
+            
+            # Магия мэтчинга и расчета ROI / Профита
+            df_final = pd.merge(df_fb, df_pa, on="CAMPAIGN", how="outer").fillna(0)
+            df_final["PROFIT"] = df_final["REVENUE"] - df_final["COST"]
+            df_final["ROI %"] = df_final.apply(lambda r: (r["PROFIT"] / r["COST"] * 100) if r["COST"] > 0 else 0, axis=1)
+            
+            # Формирование оригинальных элементов Orbiter
+            df_final["STATUS PK"] = "🟢"
+            df_final["ОФФЕРЫ QL"] = df_final["CAMPAIGN"].apply(lambda name: f"{str(name)[:15]}... 100%")
+            
+            df_final = df_final[["CAMPAIGN", "STATUS PK", "ОФФЕРЫ QL", "COST", "REVENUE", "PROFIT", "ROI %"]]
+            df_final = df_final.round(2).sort_values(by="COST", ascending=False)
+            
+            # Строка TOTAL в самый низ таблицы
+            total_cost = df_final["COST"].sum()
+            total_revenue = df_final["REVENUE"].sum()
+            total_profit = total_revenue - total_cost
+            total_roi = (total_profit / total_cost * 100) if total_cost > 0 else 0
+            
+            row_total = pd.DataFrame([{
+                "CAMPAIGN": f"Total ({len(df_final)} кампаний)", "STATUS PK": "📊", "ОФФЕРЫ QL": "—",
+                "COST": total_cost, "REVENUE": total_revenue, "PROFIT": total_profit, "ROI %": total_roi
+            }])
+            df_final = pd.concat([df_final, row_total], ignore_index=True)
+            
+            # Рендер финальной строгой таблицы аналитики
+            st.dataframe(
+                df_final, use_container_width=True, hide_index=True,
+                column_config={
+                    "CAMPAIGN": "CAMPAIGN", "STATUS PK": "STATUS PK", "ОФФЕРЫ QL": "ОФФЕРЫ QL",
+                    "COST": st.column_config.NumberColumn("COST", format="$%.2f"),
+                    "REVENUE": st.column_config.NumberColumn("REVENUE", format="$%.2f"),
+                    "PROFIT": st.column_config.NumberColumn("PROFIT", format="$%.2f"),
+                    "ROI %": st.column_config.NumberColumn("ROI", format="%.1f%%")
+                }
+            )
+        else:
+            st.error(f"В файле FB не найден столбец '{КОЛОНКА_ИМЯ_КАМПАНИИ_FB}'")
+    elif uploaded_fb is not None or uploaded_pa is not None:
+        st.warning("📊 Загрузите ОБА файла одновременно, чтобы софт свел прибыль и затраты.")
+    else:
+        st.info("💡 Панель готова к работе. Перетащите файлы со спендом FB и ревеню партнерки в поля выше.")
 
 elif st.session_state.current_page == "🚀 Лаунчер":
     st.title("🚀 Автоматический Лаунчер Кампаний")
@@ -227,3 +308,4 @@ else:
     st.info("Данный блок будет наполняться функционалом на следующих этапах разработки.")
 
 st.markdown('</div>', unsafe_allow_html=True)
+
