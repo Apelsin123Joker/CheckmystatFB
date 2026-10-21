@@ -223,20 +223,29 @@ if st.session_state.current_page == "🎯 1. Трекер":
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    st.markdown("### 📥 Импорт данных для сведения ROI")
+    st.markdown("""
+        <div style='margin-top: 20px; margin-bottom: 15px;'>
+            <h3 style='font-size: 16px; font-weight: 600; color: #ffffff;'>📥 Импорт данных для сведения ROI</h3>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    # Создаем две аккуратные колонки с отступами
     col_fb, col_pa = st.columns(2)
 
     with col_fb:
         st.markdown('<div class="upload-box">', unsafe_allow_html=True)
-        uploaded_fb = st.file_uploader("👉 Шаг 1: Загрузить РАСХОДЫ Facebook (.xlsx)", type=["xlsx", "xls"], key="main_fb")
+        st.markdown('<small style="color: #8f9aa9; font-weight:600;">👉 Шаг 1: Расходы Facebook</small>', unsafe_allow_html=True)
+        uploaded_fb = st.file_uploader("Загрузить спенд (.xlsx)", type=["xlsx", "xls"], key="main_fb", label_visibility="collapsed")
         st.markdown('</div>', unsafe_allow_html=True)
         
     with col_pa:
         st.markdown('<div class="upload-box">', unsafe_allow_html=True)
-        uploaded_pa = st.file_uploader("👉 Шаг 2: Загрузить ВЫРУЧКУ CRM / Партнерки (.xlsx, .csv)", type=["xlsx", "xls", "csv"], key="main_pa")
+        st.markdown('<small style="color: #8f9aa9; font-weight:600;">👉 Шаг 2: Выручка CRM / Партнерки</small>', unsafe_allow_html=True)
+        uploaded_pa = st.file_uploader("Загрузить ревеню (.xlsx, .csv)", type=["xlsx", "xls", "csv"], key="main_pa", label_visibility="collapsed")
         st.markdown('</div>', unsafe_allow_html=True)
 
-    st.markdown("---")
+    st.markdown("<br>", unsafe_allow_html=True)
+
 
     if uploaded_fb is not None and uploaded_pa is not None:
         try:
