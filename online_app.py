@@ -128,83 +128,32 @@ with st.container():
     st.markdown('<div style="border-top: 1px solid #1c222d; margin-bottom: 15px;"></div>', unsafe_allow_html=True)
     
     # Кнопка ТРЕКЕР
-    if st.session_state.current_page == "🎯 1. Трекер":
-        st.markdown('<div class="div-btn-active">', unsafe_allow_html=True)
-        st.button("🎯 1. Трекер", key="btn_tracker")
-        st.markdown('</div>', unsafe_allow_html=True)
-    else:
-        st.markdown('<div class="div-btn">', unsafe_allow_html=True)
-        if st.button("🎯 1. Трекер", key="btn_tracker"):
-            st.session_state.current_page = "🎯 1. Трекер"
-            st.rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
 
-    # Раздел КАМПАНИИ
-    st.markdown('<div class="menu-section-title">KAМПАНИИ</div>', unsafe_allow_html=True)
-    pages_campaigns = ["🔑 Ключи", "📊 Тоталы", "🔗 Генератор ссылок"]
-    for p in pages_campaigns:
-        if st.session_state.current_page == p:
-            st.markdown('<div class="div-btn-active">', unsafe_allow_html=True)
-            st.button(p, key=f"btn_{p}")
-            st.markdown('</div>', unsafe_allow_html=True)
-        else:
-            st.markdown('<div class="div-btn">', unsafe_allow_html=True)
-            if st.button(p, key=f"btn_{p}"):
-                st.session_state.current_page = p
-                st.rerun()
-            st.markdown('</div>', unsafe_allow_html=True)
-
-    # Раздел КРЕАТИВЫ
-    st.markdown('<div class="menu-section-title">КРЕАТИВЫ</div>', unsafe_allow_html=True)
-    pages_creatives = ["🎬 Creative Tracker", "🎨 Creative Lab"]
-    for p in pages_creatives:
-        if st.session_state.current_page == p:
-            st.markdown('<div class="div-btn-active">', unsafe_allow_html=True)
-            st.button(p, key=f"btn_{p}")
-            st.markdown('</div>', unsafe_allow_html=True)
-        else:
-            st.markdown('<div class="div-btn">', unsafe_allow_html=True)
-            if st.button(p, key=f"btn_{p}"):
-                st.session_state.current_page = p
-                st.rerun()
-            st.markdown('</div>', unsafe_allow_html=True)
-
-    # Раздел META LAUNCH
-    st.markdown('<div class="menu-section-title">META LAUNCH</div>', unsafe_allow_html=True)
-    pages_meta = ["🎴 Campaign Cards", "🚀 Лаунчер", "🛡️ БМ и защита", "📂 Библиотека креативов"]
-    for p in pages_meta:
-        if st.session_state.current_page == p:
-            st.markdown('<div class="div-btn-active">', unsafe_allow_html=True)
-            st.button(p, key=f"btn_{p}")
-            st.markdown('</div>', unsafe_allow_html=True)
-        else:
-            st.markdown('<div class="div-btn">', unsafe_allow_html=True)
-            if st.button(p, key=f"btn_{p}"):
-                st.session_state.current_page = p
-                st.rerun()
-            st.markdown('</div>', unsafe_allow_html=True)
-
-    # Раздел УТИЛИТЫ
-    st.markdown('<div class="menu-section-title">УТИЛИТЫ</div>', unsafe_allow_html=True)
-    pages_utils = ["👥 Пользователи", "🔔 Напоминания"]
-    for p in pages_utils:
-        if st.session_state.current_page == p:
-            st.markdown('<div class="div-btn-active">', unsafe_allow_html=True)
-            st.button(p, key=f"btn_{p}")
-            st.markdown('</div>', unsafe_allow_html=True)
-        else:
-            st.markdown('<div class="div-btn">', unsafe_allow_html=True)
-            if st.button(p, key=f"btn_{p}"):
-                st.session_state.current_page = p
-                st.rerun()
-            st.markdown('</div>', unsafe_allow_html=True)
+if st.session_state.current_page == "🎯 1. Трекер":
+    st.markdown("""
+    <div class="tracker-header">
+        <span class="tracker-title">🛸 Трекер</span>
+        <span style="color: #8f9aa9; font-size: 14px; border-bottom: 2px solid #00ff88; padding-bottom: 5px; font-weight: 600;">Кампании</span>
+        <span style="color: #4c566a; font-size: 14px; padding-bottom: 5px;">Домены</span>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Строгий верхний ряд элементов: Дата, Поиск и кнопки импорта в одну линию
+    col_date, col_search, col_fb_btn, col_pa_btn = st.columns([1.5, 2, 2, 2])
+    
+    with col_date:
+        выбранная_дата = st.date_input("📅 Период", datetime.now(), label_visibility="collapsed").strftime("%Y-%m-%d")
+    
+    with col_search:
+        st.text_input("🔍 Search campaign...", label_visibility="collapsed", placeholder="Search campaign...")
         
-    st.markdown('</div>', unsafe_allow_html=True)
+    with col_fb_btn:
+        uploaded_fb = st.file_uploader("📥 Спенд FB (.xlsx)", type=["xlsx", "xls"], key="main_fb", label_visibility="visible")
+        
+    with col_pa_btn:
+        uploaded_pa = st.file_uploader("📥 Выручка ПП (.xlsx, .csv)", type=["xlsx", "xls", "csv"], key="main_pa", label_visibility="visible")
 
-# =====================================================================
-# 5. ПРАВАЯ ЧАСТЬ: ИЗМЕНЕНИЕ ЭКРАНОВ ПРИ КЛИКАХ (КОНТЕНТ)
-# =====================================================================
-st.markdown('<div class="main-content">', unsafe_allow_html=True)
+    st.markdown("---")
 
 if st.session_state.current_page == "🎯 1. Трекер":
     st.markdown("""
