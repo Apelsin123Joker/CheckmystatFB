@@ -241,16 +241,15 @@ if st.session_state.current_page == "🎯 1. Трекер":
     if uploaded_fb is not None and uploaded_pa is not None:
         try:
             df_fb = pd.read_excel(uploaded_fb)
-        df_pa = pd.read_csv(uploaded_pa) if uploaded_pa.name.endswith('.csv') else pd.read_excel(uploaded_pa)
-        
-        try:
+            df_pa = pd.read_csv(uploaded_pa) if uploaded_pa.name.endswith('.csv') else pd.read_excel(uploaded_pa)
+            
             if КОЛОНКА_ИМЯ_КАМПАНИИ_FB in df_fb.columns:
                 df_fb = df_fb[[КОЛОНКА_ИМЯ_КАМПАНИИ_FB, КОЛОНКА_РАСХОДЫ_FB]].copy()
                 df_fb.columns = ["CAMPAIGN", "COST"]
                 df_fb = df_fb.groupby("CAMPAIGN", as_index=False)["COST"].sum()
                 
-                pa_name_col = "Campaign" if "Campaign" in df_pa.columns else df_pa.columns[0]
-                pa_rev_col = "Revenue" if "Revenue" in df_pa.columns else df_pa.columns[1]
+                pa_name_col = "Campaign" if "Campaign" in df_pa.columns else df_pa.columns
+                pa_rev_col = "Revenue" if "Revenue" in df_pa.columns else df_pa.columns
                 
                 df_pa = df_pa[[pa_name_col, pa_rev_col]].copy()
                 df_pa.columns = ["CAMPAIGN", "REVENUE"]
@@ -292,17 +291,24 @@ if st.session_state.current_page == "🎯 1. Трекер":
         except Exception as e:
             st.error(f"Ошибка при обработке файлов: {e}. Проверьте правильность структуры отчетов.")
             
-elif uploaded_fb is not None or uploaded_pa is not None:
-    st.warning("📊 Загрузите ОБА файла одновременно, чтобы софт свел прибыль и затраты.")
-else:
-    st.info("💡 Панель готова к работе. Перетащите файлы с расходами FB и доходами партнерки in поля выше.")
+    elif uploaded_fb is not None or uploaded_pa is not None:
+        st.warning("📊 Загрузите ОБА файла одновременно, чтобы софт свел прибыль и затраты.")
+    else:
+        st.info("💡 Панель готова к работе. Перетащите файлы со спендом FB и ревеню партнерки в поля выше.")
 
-# --- Перемикачі інших сторінок додатка ---
-if st.session_state.current_page == "🚀 Лаунчер":
+elif st.session_state.current_page == "🚀 Лаунчер":
     st.title("🚀 Автоматический Лаунчер Кампаний")
     st.write("Скелет страницы Meta Launch готов.")
     st.info("Здесь будет логика массового запуска аккаунтов Facebook.")
+
 elif st.session_state.current_page == "🔗 Генератор ссылок":
     st.title("🔗 Конструктор потоков (TDS)")
     st.write("Скелет страницы Генератора готов.")
     st.info("Здесь мы запрограммируем создание ссылок и фильтрацию ботов.")
+
+else:
+    st.title(f"🛠️ Раздел: {st.session_state.current_page}")
+    st.write("Скелет страницы успешно создан.")
+    st.info("Данный блок будет наполняться функционалом на следующих этапах разработки.")
+
+st.markdown('</div>', unsafe_allow_html=True)
