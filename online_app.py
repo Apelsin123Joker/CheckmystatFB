@@ -28,7 +28,7 @@ st.markdown("""
             color: #d1d4dc;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         }
-        /* Боковое меню */
+        /* Левое меню */
         .orbiter-sidebar {
             background-color: #11141a;
             border-right: 1px solid #1c222d;
@@ -39,7 +39,6 @@ st.markdown("""
             top: 0;
             width: 240px;
             z-index: 100;
-            overflow-y: auto;
         }
         .sidebar-logo {
             font-size: 18px;
@@ -55,7 +54,7 @@ st.markdown("""
             margin: 15px 0 5px 5px;
             font-weight: 600;
         }
-        /* Интерактивные кнопки меню */
+        /* Кнопки меню */
         .div-btn div button {
             background-color: transparent !important;
             color: #8f9aa9 !important;
@@ -64,8 +63,6 @@ st.markdown("""
             padding: 6px 5px !important;
             font-size: 14px !important;
             width: 100% !important;
-            line-height: 1.5 !important;
-            min-height: 0px !important;
         }
         .div-btn div button:hover {
             color: #00ff88 !important;
@@ -77,12 +74,10 @@ st.markdown("""
             border: none !important;
             text-align: left !important;
             padding: 8px 5px !important;
-            font-size: 14px !important;
             font-weight: 600 !important;
-            width: 100% !important;
             border-radius: 4px !important;
         }
-        /* Правая контентная область */
+        /* Правая часть */
         .main-content {
             margin-left: 260px;
             padding: 25px;
@@ -100,14 +95,26 @@ st.markdown("""
             font-weight: 600;
             color: #ffffff;
         }
-        /* Уменьшаем уродливые рамки дефолтных загрузчиков файлов */
+        
+        /* ЖЕСТКИЙ ФИКС ДЛЯ КНОПОК ЗАГРУЗКИ: Выравниваем их в одну линию по высоте с поиском */
+        div[data-testid="stColumn"] {
+            display: flex;
+            align-items: flex-end !important;
+        }
         div[data-testid="stFileUploader"] {
-            padding: 0px !important;
+            width: 100% !important;
+            margin-top: 0px !important;
+            padding-top: 0px !important;
         }
         div[data-testid="stFileUploaderDropzone"] {
-            padding: 4px 10px !important;
+            padding: 6px 10px !important;
             background-color: #11141a !important;
             border: 1px solid #1c222d !important;
+            height: 42px !important; /* Делаем высоту один в один как у инпута поиска */
+        }
+        /* Прячем лишний текст внутри загрузчиков, чтобы они не раздувались */
+        div[data-testid="stFileUploaderDropzone"] small {
+            display: none !important;
         }
     </style>
 """, unsafe_allow_html=True)
