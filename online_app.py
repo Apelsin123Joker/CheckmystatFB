@@ -1,4 +1,5 @@
 import streamlit as st
+import pandas as pd
 from datetime import datetime
 
 # =====================================================================
@@ -96,8 +97,20 @@ st.markdown("""
             font-weight: 600;
             color: #ffffff;
         }
+        .upload-box {
+            background-color: #11141a;
+            border: 1px dashed #2d3648;
+            border-radius: 6px;
+            padding: 15px;
+        }
     </style>
 """, unsafe_allow_html=True)
+
+# =====================================================================
+# НАСТРОЙКИ СЛУЖЕБНЫХ ИМЕН СТОЛБЦОВ EXCEL ДЛЯ МАТЧИНГА
+# =====================================================================
+КОЛОНКА_ИМЯ_КАМПАНИИ_FB = "Название кампании"
+КОЛОНКА_РАСХОДЫ_FB = "Потрачено (USD)"
 
 # =====================================================================
 # 3. УПРАВЛЕНИЕ СОСТОЯНИЕМ СТРАНИЦ (Session State)
@@ -202,7 +215,6 @@ if st.session_state.current_page == "🎯 1. Трекер":
     </div>
     """, unsafe_allow_html=True)
     
-    # 1. Поля даты и поиска наверх рабочей зоны
     col_date, col_search, _ = st.columns(3)
     with col_date:
         выбранная_дата = st.date_input("📅 Выберите период:", datetime.now(), label_visibility="collapsed").strftime("%Y-%m-%d")
@@ -211,7 +223,6 @@ if st.session_state.current_page == "🎯 1. Трекер":
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # 2. Два параллельных Drag-and-Drop бокса для импорта файлов
     st.markdown("### 📥 Импорт данных для сведения ROI")
     col_fb, col_pa = st.columns(2)
 
@@ -227,85 +238,71 @@ if st.session_state.current_page == "🎯 1. Трекер":
 
     st.markdown("---")
 
-    # 3. Служебные переменные для матчинга (измени имена столбцов под свой Excel, если нужно)
-    КОЛОНКА_ИМЯ_КАМПАНИИ_FB = "Название кампании"
-    КОЛОНКА_РАСХОДЫ_FB = "Потрачено (USD)"
-
-    # 4. Логика обработки и сведения данных при загрузке обоих отчетов
     if uploaded_fb is not None and uploaded_pa is not None:
-        df_fb = pd.read_excel(uploaded_fb)
+        try:
+            df_fb = pd.read_excel(uploaded_fb)
         df_pa = pd.read_csv(uploaded_pa) if uploaded_pa.name.endswith('.csv') else pd.read_excel(uploaded_pa)
+        
+        try:
+            if КОЛОНКА_ИМЯ_КАМПАНИИ_FB in df_fb.columns:
+                df_fb = df_fb[[КОЛОНКА_ИМЯ_КАМПАНИИ_FB, КОЛОНКА_РАСХОДЫ_FB]].copy()
+                df_fb.columns = ["CAMPAIGN", "COST"]
+                df_fb = df_fb.groupby("CAMPAIGN", as_index=False)["COST"].sum()
+                
+                pa_name_col = "Campaign" if "Campaign" in df_pa.columns else df_pa.columns[0]
+                pa_rev_col = "Revenue" if "Revenue" in df_pa.columns else df_pa.columns[1]
+                
+                df_pa = df_pa[[pa_name_col, pa_rev_col]].copy()
+                df_pa.columns = ["CAMPAIGN", "REVENUE"]
+                df_pa = df_pa.groupby("CAMPAIGN", as_index=False)["REVENUE"].sum()
+                
+                df_final = pd.merge(df_fb, df_pa, on="CAMPAIGN", how="outer").fillna(0)
+                df_final["PROFIT"] = df_final["REVENUE"] - df_final["COST"]
+                df_final["ROI %"] = df_final.apply(lambda r: (r["PROFIT"] / r["COST"] * 100) if r["COST"] > 0 else 0, axis=1)
+                
+                df_final["STATUS PK"] = "🟢"
+                df_final["ОФФЕРЫ QL"] = df_final["CAMPAIGN"].apply(lambda name: f"{str(name)[:15]}... 100%")
+                
+                df_final = df_final[["CAMPAIGN", "STATUS PK", "ОФФЕРЫ QL", "COST", "REVENUE", "PROFIT", "ROI %"]]
+                df_final = df_final.round(2).sort_values(by="COST", ascending=False)
+                
+                total_cost = df_final["COST"].sum()
+                total_revenue = df_final["REVENUE"].sum()
+                total_profit = total_revenue - total_cost
+                total_roi = (total_profit / total_cost * 100) if total_cost > 0 else 0
+                
+                row_total = pd.DataFrame([{
+                    "CAMPAIGN": f"Total ({len(df_final)} кампаний)", "STATUS PK": "📊", "ОФФЕРЫ QL": "—",
+                    "COST": total_cost, "REVENUE": total_revenue, "PROFIT": total_profit, "ROI %": total_roi
+                }])
+                df_final = pd.concat([df_final, row_total], ignore_index=True)
+                
+                st.dataframe(
+                    df_final, use_container_width=True, hide_index=True,
+                    column_config={
+                        "CAMPAIGN": "CAMPAIGN", "STATUS PK": "STATUS PK", "ОФФЕРЫ QL": "ОФФЕРЫ QL",
+                        "COST": st.column_config.NumberColumn("COST", format="$%.2f"),
+                        "REVENUE": st.column_config.NumberColumn("REVENUE", format="$%.2f"),
+                        "PROFIT": st.column_config.NumberColumn("PROFIT", format="$%.2f"),
+                        "ROI %": st.column_config.NumberColumn("ROI", format="%.1f%%")
+                    }
+                )
+            else:
+                st.error(f"В файле FB не найден столбец '{КОЛОНКА_ИМЯ_КАМПАНИИ_FB}'")
+        except Exception as e:
+            st.error(f"Ошибка при обработке файлов: {e}. Проверьте правильность структуры отчетов.")
             
-        if КОЛОНКА_ИМЯ_КАМПАНИИ_FB in df_fb.columns:
-            # Сведение расходов FB
-            df_fb = df_fb[[КОЛОНКА_ИМЯ_КАМПАНИИ_FB, КОЛОНКА_РАСХОДЫ_FB]].copy()
-            df_fb.columns = ["CAMPAIGN", "COST"]
-            df_fb = df_fb.groupby("CAMPAIGN", as_index=False)["COST"].sum()
-            
-            # Автоподбор колонок в файле партнерки
-            pa_name_col = "Campaign" if "Campaign" in df_pa.columns else df_pa.columns[0]
-            pa_rev_col = "Revenue" if "Revenue" in df_pa.columns else df_pa.columns[1]
-            
-            df_pa = df_pa[[pa_name_col, pa_rev_col]].copy()
-            df_pa.columns = ["CAMPAIGN", "REVENUE"]
-            df_pa = df_pa.groupby("CAMPAIGN", as_index=False)["REVENUE"].sum()
-            
-            # Магия мэтчинга и расчета ROI / Профита
-            df_final = pd.merge(df_fb, df_pa, on="CAMPAIGN", how="outer").fillna(0)
-            df_final["PROFIT"] = df_final["REVENUE"] - df_final["COST"]
-            df_final["ROI %"] = df_final.apply(lambda r: (r["PROFIT"] / r["COST"] * 100) if r["COST"] > 0 else 0, axis=1)
-            
-            # Формирование оригинальных элементов Orbiter
-            df_final["STATUS PK"] = "🟢"
-            df_final["ОФФЕРЫ QL"] = df_final["CAMPAIGN"].apply(lambda name: f"{str(name)[:15]}... 100%")
-            
-            df_final = df_final[["CAMPAIGN", "STATUS PK", "ОФФЕРЫ QL", "COST", "REVENUE", "PROFIT", "ROI %"]]
-            df_final = df_final.round(2).sort_values(by="COST", ascending=False)
-            
-            # Строка TOTAL в самый низ таблицы
-            total_cost = df_final["COST"].sum()
-            total_revenue = df_final["REVENUE"].sum()
-            total_profit = total_revenue - total_cost
-            total_roi = (total_profit / total_cost * 100) if total_cost > 0 else 0
-            
-            row_total = pd.DataFrame([{
-                "CAMPAIGN": f"Total ({len(df_final)} кампаний)", "STATUS PK": "📊", "ОФФЕРЫ QL": "—",
-                "COST": total_cost, "REVENUE": total_revenue, "PROFIT": total_profit, "ROI %": total_roi
-            }])
-            df_final = pd.concat([df_final, row_total], ignore_index=True)
-            
-            # Рендер финальной строгой таблицы аналитики
-            st.dataframe(
-                df_final, use_container_width=True, hide_index=True,
-                column_config={
-                    "CAMPAIGN": "CAMPAIGN", "STATUS PK": "STATUS PK", "ОФФЕРЫ QL": "ОФФЕРЫ QL",
-                    "COST": st.column_config.NumberColumn("COST", format="$%.2f"),
-                    "REVENUE": st.column_config.NumberColumn("REVENUE", format="$%.2f"),
-                    "PROFIT": st.column_config.NumberColumn("PROFIT", format="$%.2f"),
-                    "ROI %": st.column_config.NumberColumn("ROI", format="%.1f%%")
-                }
-            )
-        else:
-            st.error(f"В файле FB не найден столбец '{КОЛОНКА_ИМЯ_КАМПАНИИ_FB}'")
-    elif uploaded_fb is not None or uploaded_pa is not None:
-        st.warning("📊 Загрузите ОБА файла одновременно, чтобы софт свел прибыль и затраты.")
-    else:
-        st.info("💡 Панель готова к работе. Перетащите файлы со спендом FB и ревеню партнерки в поля выше.")
+elif uploaded_fb is not None or uploaded_pa is not None:
+    st.warning("📊 Загрузите ОБА файла одновременно, чтобы софт свел прибыль и затраты.")
+else:
+    st.info("💡 Панель готова к работе. Перетащите файлы с расходами FB и доходами партнерки in поля выше.")
 
-elif st.session_state.current_page == "🚀 Лаунчер":
+# --- Перемикачі інших сторінок додатка ---
+if st.session_state.current_page == "🚀 Лаунчер":
     st.title("🚀 Автоматический Лаунчер Кампаний")
     st.write("Скелет страницы Meta Launch готов.")
     st.info("Здесь будет логика массового запуска аккаунтов Facebook.")
-
 elif st.session_state.current_page == "🔗 Генератор ссылок":
     st.title("🔗 Конструктор потоков (TDS)")
     st.write("Скелет страницы Генератора готов.")
     st.info("Здесь мы запрограммируем создание ссылок и фильтрацию ботов.")
-
-else:
-    st.title(f"🛠️ Раздел: {st.session_state.current_page}")
-    st.write("Скелет страницы успешно создан.")
-    st.info("Данный блок будет наполняться функционалом на следующих этапах разработки.")
-
-st.markdown('</div>', unsafe_allow_html=True)
-
