@@ -4,117 +4,134 @@ import requests
 from datetime import datetime
 
 # =====================================================================
-# НАСТРОЙКИ ПОДКЛЮЧЕНИЯ
+# НАСТРОЙКИ СТИЛЯ И ИНТЕРФЕЙСА В СТИЛЕ ORBITER
 # =====================================================================
-# Замените на реальный API URL и Ключ вашей платформы Orbiter
-ORBITER_API_URL = "https://your-orbiter-domain.com" 
-ORBITER_API_KEY = "ВАШ_ТОКЕН_ИЗ_ORBITER"
+st.set_page_config(
+    page_title="Orbiter Control Center - Трекер",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
-# Названия колонок в вашем Excel-файле из Facebook
-КОЛОНКА_ИМЯ_КАМПАНИИ = "Название кампании"
-КОЛОНКА_РАСХОДЫ = "Потрачено (RUB)"
-
-# =====================================================================
-# ФУНКЦИЯ ЗАПРОСА К API КОМПАНИИ (ORBITER)
-# =====================================================================
-def fetch_orbiter_revenue(target_date):
-    """Стучится в API Orbiter и забирает выручку по кампаниям за дату"""
-    headers = {
-        "Authorization": f"Bearer {ORBITER_API_KEY}",
-        "Content-Type": "application/json"
-    }
-    
-    # Формируем запрос под требования API вашей компании
-    payload = {
-        "date": target_date,
-        "group_by": "campaign_name",
-        "metrics": ["revenue"]
-    }
-    
-    try:
-        response = requests.post(ORBITER_API_URL, json=payload, headers=headers)
-        if response.status_code == 200:
-            data = response.json()
-            # Допустим, API возвращает список: [{"campaign_name": "РК_1", "revenue": 500}]
-            rows = data.get("data", [])
-            return pd.DataFrame([{"Имя_Кампании": r.get("campaign_name"), "Доход": float(r.get("revenue", 0))} for r in rows])
-    except Exception as e:
-        st.sidebar.error(f"Ошибка API Orbiter: {e}")
-        
-    return pd.DataFrame(columns=["Имя_Кампании", "Доход"])
+# Внедряем CSS-стили для полной имитации интерфейса Orbiter (темный фон, шрифты, границы)
+st.markdown("""
+    <style>
+        /* Общий фон страницы и текст */
+        .stApp {
+            background-color: #0b0c10;
+            color: #c5c6c7;
+        }
+        /* Боковое меню */
+        section[data-testid="stSidebar"] {
+            background-color: #1f2833;
+            border-right: 1px solid #45a29e;
+        }
+        /* Стилизация заголовков */
+        h1, h2, h3 {
+            color: #ffffff !important;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        /* Фирменная разделительная линия */
+        hr {
+            border-color: #333b4d !important;
+        }
+    </style>
+""", unsafe_allow_html=True)
 
 # =====================================================================
-# ИНТЕРФЕЙС И ВНЕШНИЙ ВИД (КРАСИВАЯ ПАНЕЛЬ)
+# НАСТРОЙКИ ДАННЫХ (Подставьте ваши столбцы из Excel FB)
 # =====================================================================
-st.set_page_config(page_title="Orbiter Stats Matcher", layout="wide", initial_sidebar_state="expanded")
+КОЛОНКА_ИМЯ_КАМПАНИИ = "Название кампании"  # Столбец из FB (например, d8x_BK_FB_LSA...)
+КОЛОНКА_РАСХОДЫ = "Потрачено (USD)"       # Столбец из FB с расходами (Cost)
 
-# --- БОКОВОЕ МЕНЮ (Кастомизация управления) ---
-st.sidebar.image("https://icons8.com", width=60)
-st.sidebar.title("Orbiter Интегратор")
-st.sidebar.write("---")
+# =====================================================================
+# ФУНКЦИЯ ДЛЯ ЗАПРОСА В API ORBITER
+# =====================================================================
+def получить_данные_трекера(target_date):
+    """Имитация запроса к API Orbiter для получения офферов и покупок"""
+    # В будущем здесь будет реальный requests.post к вашему бэкенду
+    # Сейчас возвращаем демо-данные, отформатированные точно как на скрине
+    demo_data = [
+        {"Имя_Кампании": "c5p_BK_AAE_TR_tr_AG14_s5_rk1_16.10_s6", "STATUS_PK": "🟢", "OFFERS_QL": "c5p_BK_AAE_TR_tr_AG14... 100% (11/0)", "PURCHASES": 0},
+        {"Имя_Кампании": "c5p_BK_BKVD_PL_pl_AG14_ql1_rk1_05.10_s1", "STATUS_PK": "🟢", "OFFERS_QL": "c5p_BK_BKVD_PL_pl_AG14... 100% (15/4)", "PURCHASES": 1},
+        {"Имя_Кампании": "c5p_BK_AAE_TR_tr_AG14_s5_rk2_16.10_s7", "STATUS_PK": "🟢", "OFFERS_QL": "c5p_BK_AAE_TR_tr_AG14... 100% (7/0)", "PURCHASES": 0},
+        {"Имя_Кампании": "d8x_BK_FB_LSA_US_es_s7_AG14_rk1_scr1", "STATUS_PK": "🟢", "OFFERS_QL": "d8x_BK_FB_LSA_US_es_s7... 100% (6/0)", "PURCHASES": 0},
+    ]
+    return pd.DataFrame(demo_data)
 
-выбранная_дата = st.sidebar.date_input("📅 1. Выберите дату отчета:", datetime.now()).strftime("%Y-%m-%d")
-uploaded_file = st.sidebar.file_uploader("📂 2. Загрузите Excel Facebook (Спенд)", type=["xlsx", "xls"])
-st.sidebar.write("---")
-st.sidebar.info("Софт автоматически склеит расход из файла с доходами из API Orbiter по совпадению имен РК.")
+# =====================================================================
+# ЭКРАН ПАНЕЛИ УПРАВЛЕНИЯ
+# =====================================================================
 
-# --- ГЛАВНЫЙ ЭКРАН ---
+# Меню управления слева
+st.sidebar.title("🛸 Orbiter CC")
+st.sidebar.write("### Панель управления")
+выбранная_дата = st.sidebar.date_input("📅 Выберите дату", datetime.now()).strftime("%Y-%m-%d")
+uploaded_file = st.sidebar.file_uploader("📥 Загрузить спенд FB (.xlsx)", type=["xlsx", "xls"])
+
+# Главное окно трекера
+st.title("🛸 Трекер")
+st.write(f"### Аналитика за неделю/день — `{выбранная_дата}`")
+st.write("---")
+
 if uploaded_file is not None:
-    # Чтение данных FB
-    таблица_фб = pd.read_excel(uploaded_file)
+    # Загружаем спенд из файла
+    df_fb = pd.read_excel(uploaded_file)
     
-    if КОЛОНКА_ИМЯ_КАМПАНИИ in таблица_фб.columns and КОЛОНКА_РАСХОДЫ in таблица_фб.columns:
+    if КОЛОНКА_ИМЯ_КАМПАНИИ in df_fb.columns and КОЛОНКА_РАСХОДЫ in df_fb.columns:
+        # Форматируем траты
+        df_fb = df_fb[[КОЛОНКА_ИМЯ_КАМПАНИИ, КОЛОНКА_РАСХОДЫ]].copy()
+        df_fb.columns = ["CAMPAIGN", "COST"]
+        df_fb = df_fb.groupby("CAMPAIGN", as_index=False)["COST"].sum()
         
-        # Подготовка расходов
-        таблица_фб = таблица_фб[[КОЛОНКА_ИМЯ_КАМПАНИИ, КОЛОНКА_РАСХОДЫ]].copy()
-        таблица_фб.columns = ["Имя_Кампании", "Расход"]
-        таблица_фб = таблица_фб.groupby("Имя_Кампании", as_index=False)["Расход"].sum().fillna(0)
+        # Запрашиваем данные трекера (статусы, офферы, покупки)
+        df_tracker = получить_данные_трекера(выбранная_дата)
         
-        # Получение доходов из Orbiter API
-        with st.spinner('⏳ Подтягиваем выручку из API Orbiter...'):
-            таблица_трекера = fetch_orbiter_revenue(выбранная_дата)
-            
-        # Объединение
-        итоговая_таблица = pd.merge(таблица_фб, таблица_трекера, on="Имя_Кампании", how="outer").fillna(0)
-        итоговая_таблица["Прибыль"] = итоговая_таблица["Доход"] - итоговая_таблица["Расход"]
-        итоговая_таблица["ROI %"] = итоговая_таблица.apply(lambda r: (r["Прибыль"] / r["Расход"] * 100) if r["Расход"] > 0 else 0, axis=1)
-        итоговая_таблица = итоговая_таблица.round(2).sort_values(by="Прибыль", ascending=False)
+        # Склеиваем таблицы по названию кампании
+        # Имена колонок приведены в точное соответствие с вашим интерфейсом Orbiter
+        df_final = pd.merge(df_fb, df_tracker, left_on="CAMPAIGN", right_on="Имя_Кампании", how="outer")
         
-        # ВЫВОД КРАСИВЫХ ВИДЖЕТОВ (KPI БЛОКИ)
-        total_cost = итоговая_таблица["Расход"].sum()
-        total_revenue = итоговая_таблица["Доход"].sum()
-        total_profit = total_revenue - total_cost
-        total_roi = (total_profit / total_cost * 100) if total_cost > 0 else 0
+        # Если кампании нет в выгрузках, заполняем пропуски дефолтными значениями
+        df_final["STATUS_PK"] = df_final["STATUS_PK"].fillna("⚪")
+        df_final["OFFERS_QL"] = df_final["OFFERS_QL"].fillna("Нет данных")
+        df_final["COST"] = df_final["COST"].fillna(0.0)
+        df_final["PURCHASES"] = df_final["PURCHASES"].fillna(0).astype(int)
         
-        col1, col2, col3, col4 = st.columns(4)
-        col1.metric("💰 Всего Расход (FB)", f"{total_cost:,.2f} ₽")
-        col2.metric("📈 Всего Выручка (Orbiter)", f"{total_revenue:,.2f} ₽")
+        # Формируем точный порядок колонок, как на скриншоте Orbiter
+        df_final = df_final[["CAMPAIGN", "STATUS_PK", "OFFERS_QL", "COST", "PURCHASES"]]
         
-        # Подсвечиваем прибыль зеленым или красным
-        if total_profit >= 0:
-            col3.metric("✅ Чистая Прибыль", f"{total_profit:,.2f} ₽", delta=f"+{total_roi:.2f}% ROI")
-        else:
-            col4.metric("🚨 Чистый Убыток", f"{total_profit:,.2f} ₽", delta=f"{total_roi:.2f}% ROI", delta_color="inverse")
-            
-        st.write("---")
+        # Сортируем по расходам (от больших к меньшим), как принято в арбитражных таблицах
+        df_final = df_final.sort_values(by="COST", ascending=False)
         
-        # ИНТЕРАКТИВНАЯ ТАБЛИЦА С СОРТИРОВКОЙ И ФИЛЬТРАМИ
-        st.subheader("📋 Сводная аналитика по рекламным кампаниям")
+        # Считаем строку Total (Итого) в самом низу
+        total_cost = df_final["COST"].sum()
+        total_purchases = df_final["PURCHASES"].sum()
         
-        # Стилизуем таблицу, чтобы подсветить прибыльные кампании
+        row_total = pd.DataFrame([{
+            "CAMPAIGN": f"Total ({len(df_final)} РК)",
+            "STATUS_PK": "📊",
+            "OFFERS_QL": "—",
+            "COST": total_cost,
+            "PURCHASES": total_purchases
+        }])
+        
+        df_final = pd.concat([df_final, row_total], ignore_index=True)
+        
+        # Вывод таблицы в оригинальном строгом стиле
         st.dataframe(
-            итоговая_таблица, 
+            df_final,
             use_container_width=True,
             column_config={
-                "Расход": st.column_config.NumberColumn("Траты FB", format="%.2f ₽"),
-                "Доход": st.column_config.NumberColumn("Выручка Orbiter", format="%.2f ₽"),
-                "Прибыль": st.column_config.NumberColumn("Профит", format="%.2f ₽"),
-                "ROI %": st.column_config.ProgressColumn("Окупаемость (ROI)", min_value=-100, max_value=200, format="%d%%")
-            }
+                "CAMPAIGN": st.column_config.TextColumn("CAMPAIGN"),
+                "STATUS_PK": st.column_config.TextColumn("STATUS PK"),
+                "OFFERS_QL": st.column_config.TextColumn("ОФФЕРЫ QL"),
+                "COST": st.column_config.NumberColumn("COST \(", format="\)%.2f"),
+                "PURCHASES": st.column_config.NumberColumn("PURCHASES 🛒")
+            },
+            hide_index=True
         )
         
     else:
-        st.error(f"Ошибка структуры файла: убедитесь, что в Excel есть столбцы '{КОЛОНКА_ИМЯ_КАМПАНИИ}' и '{КОЛОНКА_РАСХОДЫ}'")
+        st.error(f"Колонки файла не совпадают! Проверьте, есть ли '{КОЛОНКА_ИМЯ_КАМПАНИИ}' и '{КОЛОНКА_РАСХОДЫ}'")
 else:
-    # Заглушка, если файл еще не перетащили
-    st.info("👋 Добро пожаловать! Пожалуйста, выберите дату отчета и загрузите файл со спендом в левой панели меню.")
+    st.info("Пожалуйста, загрузите `.xlsx` отчет с расходами Facebook в левой панели для отображения таблицы кампаний.")
+
