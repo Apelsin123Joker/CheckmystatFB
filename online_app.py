@@ -3,142 +3,58 @@ import pandas as pd
 from datetime import datetime
 
 # =====================================================================
-# 1. КОНФИГУРАЦИЯ СТРАНИЦЫ И СКРЫТИЕ СТАНДАРТНОГО МЕНЮ
+# 1. КОНФИГУРАЦИЯ СТРАНИЦЫ И СКРЫТИЕ ДЕФОЛТНОГО МЕНЮ
 # =====================================================================
 st.set_page_config(
     page_title="Orbiter Control Center",
     layout="wide",
-    initial_sidebar_state="collapsed"  # Полностью убираем дефолтный сайдбар
+    initial_sidebar_state="collapsed"
 )
 
-# =====================================================================
-# 2. ГЛУБОКАЯ СТИЛИЗАЦИЯ (ТОЧНАЯ КОПИЯ ДИЗАЙНА ORBITER CC)
-# =====================================================================
+# Профессиональный темный стиль Orbiter с жестким выравниванием элементов
 st.markdown("""
     <style>
-        /* Отключаем стандартные отступы окон Стримлита */
-        .block-container {
-            padding: 0rem !important;
-            max-width: 100% !important;
-        }
-        div[data-testid="stSidebarCollapsedControl"] {
-            display: none !important;
-        }
+        .block-container { padding: 0rem !important; max-width: 100% !important; }
+        div[data-testid="stSidebarCollapsedControl"] { display: none !important; }
+        .stApp { background-color: #090b0e; color: #d1d4dc; font-family: -apple-system, sans-serif; }
         
-        /* Цветовая схема оригинального Orbiter */
-        .stApp {
-            background-color: #090b0e;
-            color: #d1d4dc;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-        }
-        
-        /* ЛЕВОЕ МОНОЛИТНОЕ МЕНЮ */
+        /* Монолитная левая панель */
         .orbiter-sidebar {
-            background-color: #11141a;
-            border-right: 1px solid #1c222d;
-            padding: 20px 15px;
-            height: 100vh;
-            position: fixed;
-            left: 0;
-            top: 0;
-            width: 240px;
-            z-index: 100;
-            overflow-y: auto;
+            background-color: #11141a; border-right: 1px solid #1c222d;
+            padding: 20px 15px; height: 100vh; position: fixed;
+            left: 0; top: 0; width: 240px; z-index: 100; overflow-y: auto;
         }
-        .sidebar-logo {
-            font-size: 18px;
-            font-weight: 700;
-            color: #ffffff;
-            margin-bottom: 25px;
-        }
-        .menu-section-title {
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: #4c566a;
-            margin: 18px 0 6px 5px;
-            font-weight: 600;
-        }
+        .sidebar-logo { font-size: 18px; font-weight: 700; color: #ffffff; margin-bottom: 25px; }
+        .menu-section-title { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #4c566a; margin: 18px 0 6px 5px; font-weight: 600; }
         
-        /* СТИЛИЗАЦИЯ ИНТЕРАКТИВНЫХ КНОПОК ПОД ТЕКСТОВЫЕ ССЫЛКИ ТРЕКЕРА */
-        .div-btn div button {
-            background-color: transparent !important;
-            color: #8f9aa9 !important;
-            border: none !important;
-            text-align: left !important;
-            padding: 6px 5px !important;
-            font-size: 14px !important;
-            width: 100% !important;
-            line-height: 1.5 !important;
-            min-height: 0px !important;
-        }
-        .div-btn div button:hover {
-            color: #00ff88 !important;
-            background-color: #162221 !important;
-        }
-        .div-btn-active div button {
-            background-color: #162221 !important;
-            color: #00ff88 !important;
-            border: none !important;
-            text-align: left !important;
-            padding: 7px 5px !important;
-            font-size: 14px !important;
-            font-weight: 600 !important;
-            width: 100% !important;
-            border-radius: 4px !important;
-        }
+        /* Кастомные кнопки под оригинальные пункты меню */
+        .div-btn div button { background-color: transparent !important; color: #8f9aa9 !important; border: none !important; text-align: left !important; padding: 6px 5px !important; font-size: 14px !important; width: 100% !important; }
+        .div-btn div button:hover { color: #00ff88 !important; background-color: #162221 !important; }
+        .div-btn-active div button { background-color: #162221 !important; color: #00ff88 !important; border: none !important; text-align: left !important; padding: 7px 5px !important; font-size: 14px !important; font-weight: 600 !important; width: 100% !important; border-radius: 4px !important; }
         
-        /* ПРАВАЯ ОБЛАСТЬ КОНТЕНТА */
-        .main-content {
-            margin-left: 265px;
-            padding: 25px;
-        }
-        .tracker-header {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-            margin-bottom: 25px;
-            border-bottom: 1px solid #1c222d;
-            padding-bottom: 15px;
-        }
-        .tracker-title {
-            font-size: 20px;
-            font-weight: 600;
-            color: #ffffff;
-        }
+        /* Правая рабочая область */
+        .main-content { margin-left: 265px; padding: 25px; }
+        .tracker-header { display: flex; align-items: center; gap: 20px; margin-bottom: 25px; border-bottom: 1px solid #1c222d; padding-bottom: 15px; }
+        .tracker-title { font-size: 20px; font-weight: 600; color: #ffffff; }
         
-        /* ВЫРАВНИВАНИЕ И ФИКС ЗАГРУЗЧИКОВ ФАЙЛОВ В ВЕРХНИЙ РЯД */
-        div[data-testid="stColumn"] {
-            display: flex;
-            align-items: flex-end !important;
-        }
-        div[data-testid="stFileUploader"] {
-            width: 100% !important;
-            margin-top: 0px !important;
-            padding-top: 0px !important;
-        }
-        div[data-testid="stFileUploaderDropzone"] {
-            padding: 6px 10px !important;
-            background-color: #11141a !important;
-            border: 1px solid #1c222d !important;
-            height: 42px !important; /* Ровно под высоту инпутов */
-        }
-        div[data-testid="stFileUploaderDropzone"] small {
-            display: none !important; /* Убираем лишний текст */
-        }
+        /* Выравнивание загрузчиков файлов строго по сетке */
+        div[data-testid="stColumn"] { display: flex; align-items: flex-end !important; }
+        div[data-testid="stFileUploader"] { width: 100% !important; margin-top: 0px !important; padding-top: 0px !important; }
+        div[data-testid="stFileUploaderDropzone"] { padding: 6px 10px !important; background-color: #11141a !important; border: 1px solid #1c222d !important; height: 42px !important; }
+        div[data-testid="stFileUploaderDropzone"] small { display: none !important; }
     </style>
 """, unsafe_allow_html=True)
 
-# Глобальные имена столбцов
+# Имена колонок для мэтчинга таблиц
 КОЛОНКА_ИМЯ_КАМПАНИИ_FB = "Название кампании"
 КОЛОНКА_РАСХОДЫ_FB = "Потрачено (USD)"
 
-# Запоминание переключения разделов
+# Сессии навигации
 if "current_page" not in st.session_state:
     st.session_state.current_page = "📊 Трекер"
 
 # =====================================================================
-# 3. ОТРИСОВКА ОРИГИНАЛЬНОГО БОКОВОГО МЕНЮ ORBITER
+# 2. ОТРИСОВКА БОКОВОГО МЕНЮ СО ВСЕМИ КНОПКАМИ ИЗ ORBITER
 # =====================================================================
 with st.container():
     st.markdown('<div class="orbiter-sidebar">', unsafe_allow_html=True)
@@ -146,79 +62,55 @@ with st.container():
     st.markdown('<div style="color: #616e88; font-size: 13px; margin-top:-20px; margin-bottom:20px;">🚨 CONTROL CENTER</div>', unsafe_allow_html=True)
     st.markdown('<div style="border-top: 1px solid #1c222d; margin-bottom: 15px;"></div>', unsafe_allow_html=True)
     
-    # Ссылка Главная
-    pages_root = [("🏠 Главная", "🏠 Главная")]
-    for disp, internal in pages_root:
-        st.markdown(f'<div class="{"div-btn-active" if st.session_state.current_page == internal else "div-btn"}">', unsafe_allow_html=True)
-        if st.button(disp, key=f"nav_{internal}"):
-            st.session_state.current_page = internal
-            st.rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
+    # Пункт Главная
+    st.markdown(f'<div class="{"div-btn-active" if st.session_state.current_page == "🏠 Главная" else "div-btn"}">', unsafe_allow_html=True)
+    if st.button("🏠 Главная", key="nav_home"):
+        st.session_state.current_page = "🏠 Главная"
+        st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
         
-    # Категория КАМПАНИИ
+    # Раздел КАМПАНИИ
     st.markdown('<div class="menu-section-title">КАМПАНИИ</div>', unsafe_allow_html=True)
-    pages_campaigns = [
-        ("📊 Трекер", "📊 Трекер"),
-        ("🔑 Ключи", "🔑 Ключи"),
-        ("📈 Тоталы", "📈 Тоталы"),
-        ("🔗 Генератор ссылок", "🔗 Генератор ссылок")
-    ]
-    for disp, internal in pages_campaigns:
-        st.markdown(f'<div class="{"div-btn-active" if st.session_state.current_page == internal else "div-btn"}">', unsafe_allow_html=True)
-        if st.button(disp, key=f"nav_{internal}"):
-            st.session_state.current_page = internal
+    for name in ["📊 Трекер", "🔑 Ключи", "📈 Тоталы", "🔗 Генератор ссылок"]:
+        st.markdown(f'<div class="{"div-btn-active" if st.session_state.current_page == name else "div-btn"}">', unsafe_allow_html=True)
+        if st.button(name, key=f"nav_{name}"):
+            st.session_state.current_page = name
             st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
         
-    # Категория КРЕАТИВЫ
+    # Раздел КРЕАТИВЫ
     st.markdown('<div class="menu-section-title">КРЕАТИВЫ</div>', unsafe_allow_html=True)
-    pages_creatives = [
-        ("🎬 Creative Tracker", "🎬 Creative Tracker"),
-        ("🎨 Creative Lab", "🎨 Creative Lab")
-    ]
-    for disp, internal in pages_creatives:
-        st.markdown(f'<div class="{"div-btn-active" if st.session_state.current_page == internal else "div-btn"}">', unsafe_allow_html=True)
-        if st.button(disp, key=f"nav_{internal}"):
-            st.session_state.current_page = internal
+    for name in ["🎬 Creative Tracker", "🎨 Creative Lab"]:
+        st.markdown(f'<div class="{"div-btn-active" if st.session_state.current_page == name else "div-btn"}">', unsafe_allow_html=True)
+        if st.button(name, key=f"nav_{name}"):
+            st.session_state.current_page = name
             st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
         
-    # Категория META LAUNCH
+    # Раздел META LAUNCH
     st.markdown('<div class="menu-section-title">META LAUNCH</div>', unsafe_allow_html=True)
-    pages_meta = [
-        ("🎴 Campaign Cards", "🎴 Campaign Cards"),
-        ("🚀 Лаунчер", "🚀 Лаунчер"),
-        ("🛡️ БМ и защита", "🛡️ БМ и защита"),
-        ("📂 Библиотека креативов", "📂 Библиотека креативов")
-    ]
-    for disp, internal in pages_meta:
-        st.markdown(f'<div class="{"div-btn-active" if st.session_state.current_page == internal else "div-btn"}">', unsafe_allow_html=True)
-        if st.button(disp, key=f"nav_{internal}"):
-            st.session_state.current_page = internal
+    for name in ["🎴 Campaign Cards", "🚀 Лаунчер", "🛡️ БМ и защита", "📂 Библиотека креативов"]:
+        st.markdown(f'<div class="{"div-btn-active" if st.session_state.current_page == name else "div-btn"}">', unsafe_allow_html=True)
+        if st.button(name, key=f"nav_{name}"):
+            st.session_state.current_page = name
             st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
         
-    # Категория УТИЛИТЫ
+    # Раздел УТИЛИТЫ
     st.markdown('<div class="menu-section-title">УТИЛИТЫ</div>', unsafe_allow_html=True)
-    pages_utils = [
-        ("👥 Пользователи", "👥 Пользователи"),
-        ("🔔 Напоминания", "🔔 Напоминания")
-    ]
-    for disp, internal in pages_utils:
-        st.markdown(f'<div class="{"div-btn-active" if st.session_state.current_page == internal else "div-btn"}">', unsafe_allow_html=True)
-        if st.button(disp, key=f"nav_{internal}"):
-            st.session_state.current_page = internal
+    for name in ["👥 Пользователи", "🔔 Напоминания"]:
+        st.markdown(f'<div class="{"div-btn-active" if st.session_state.current_page == name else "div-btn"}">', unsafe_allow_html=True)
+        if st.button(name, key=f"nav_{name}"):
+            st.session_state.current_page = name
             st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
-
     st.markdown('</div>', unsafe_allow_html=True)
 
 # =====================================================================
-# 4. РАБОЧАЯ ОБЛАСТЬ СПРАВА (ВЫВОД КОНТЕНТА СТРАНИЦ)
+# 3. ОСНОВНАЯ РАБОЧАЯ ОБЛАСТЬ
 # =====================================================================
 st.markdown('<div class="main-content">', unsafe_allow_html=True)
 
-# --- ВЫВОД ГЛАВНОГО РАЗДЕЛА: ТРЕКЕР ---
 if st.session_state.current_page == "📊 Трекер":
     st.markdown("""
     <div class="tracker-header">
@@ -228,9 +120,8 @@ if st.session_state.current_page == "📊 Трекер":
     </div>
     """, unsafe_allow_html=True)
     
-    # ВЕРХНИЙ СТРОГИЙ РЯД: Календарь, Поиск и Кнопки закидывания файлов
+    # Строгий горизонтальный ряд элементов
     col_date, col_search, col_fb, col_pa = st.columns([1, 1.5, 2, 2])
-    
     with col_date:
         выбранная_дата = st.date_input("📅 Период", datetime.now(), label_visibility="collapsed").strftime("%Y-%m-%d")
     with col_search:
@@ -242,23 +133,7 @@ if st.session_state.current_page == "📊 Трекер":
 
     st.markdown("<hr style='margin-top:10px; margin-bottom:20px;'>", unsafe_allow_html=True)
 
-    # ОБРАБОТКА И МАТЧИНГ ТАБЛИЦ
-    if uploaded_fb is not None and uploaded_pa is not None:
-        try:
-                col_date, col_search, col_fb, col_pa = st.columns([1, 1.5, 2, 2])
-    
-    with col_date:
-        выбранная_дата = st.date_input("📅 Период", datetime.now(), label_visibility="collapsed").strftime("%Y-%m-%d")
-    with col_search:
-        st.text_input("🔍 Search...", label_visibility="collapsed", placeholder="Search campaign...")
-    with col_fb:
-        uploaded_fb = st.file_uploader("📥 Спенд FB (.xlsx)", type=["xlsx", "xls"], key="main_fb", label_visibility="collapsed")
-    with col_pa:
-        uploaded_pa = st.file_uploader("📥 Выручка ПП (.xlsx, .csv)", type=["xlsx", "xls", "csv"], key="main_pa", label_visibility="collapsed")
-
-    st.markdown("<hr style='margin-top:10px; margin-bottom:20px;'>", unsafe_allow_html=True)
-
-    # ОБРАБОТКА И МАТЧИНГ ТАБЛИЦ
+    # Калькулятор сопоставления данных
     if uploaded_fb is not None and uploaded_pa is not None:
         try:
             df_fb = pd.read_excel(uploaded_fb)
@@ -269,8 +144,8 @@ if st.session_state.current_page == "📊 Трекер":
                 df_fb.columns = ["CAMPAIGN", "COST"]
                 df_fb = df_fb.groupby("CAMPAIGN", as_index=False)["COST"].sum()
                 
-                pa_name_col = "Campaign" if "Campaign" in df_pa.columns else df_pa.columns[0]
-                pa_rev_col = "Revenue" if "Revenue" in df_pa.columns else df_pa.columns[1]
+                pa_name_col = "Campaign" if "Campaign" in df_pa.columns else df_pa.columns
+                pa_rev_col = "Revenue" if "Revenue" in df_pa.columns else df_pa.columns
                 
                 df_pa = df_pa[[pa_name_col, pa_rev_col]].copy()
                 df_pa.columns = ["CAMPAIGN", "REVENUE"]
@@ -295,7 +170,7 @@ if st.session_state.current_page == "📊 Трекер":
                     "ROI %": ((total_revenue - total_cost) / total_cost * 100) if total_cost > 0 else 0
                 }])
                 df_final = pd.concat([df_final, row_total], ignore_index=True)
-                
+                                # 5. Вывод сводной таблицы результатов
                 st.dataframe(
                     df_final, use_container_width=True, hide_index=True,
                     column_config={
@@ -309,17 +184,18 @@ if st.session_state.current_page == "📊 Трекер":
             else:
                 st.error(f"В файле FB не найден столбец '{КОЛОНКА_ИМЯ_КАМПАНИИ_FB}'")
         except Exception as e:
-            st.error(f"Ошибка парсинга: {e}")
+            st.error(f"Ошибка парсинга отчетов: {e}")
+            
     elif uploaded_fb is not None or uploaded_pa is not None:
         st.warning("📊 Загрузите ОБА файла одновременно для сведения ROI.")
     else:
-        st.info("💡 Панель готова к работе. Загрузите файлы расходов FB и доходов ПП в верхнее меню.")
+        st.info("💡 Панель готова. Перетащите файлы расходов FB и выручки ПП в маленькие кнопки управления выше.")
 
-# --- ОСТАЛЬНЫЕ СТРАНИЦЫ (ЧИСТЫЕ СТРУКТУРНЫЕ ЗАГЛУШКИ БЕЗ ФУНКЦИОНАЛА) ---
+# --- ЛОГИКА ДЛЯ ОСТАЛЬНЫХ СТРАНИЦ ПЛАТФОРМЫ ---
 else:
     st.title(f"🛠️ Модуль: {st.session_state.current_page}")
-    st.write("Интерфейс успешно отрисован по сетке Orbiter.")
-    st.info("Данный раздел сейчас пустой и готов к привязке реального функционала.")
+    st.write("Интерфейс отрисован по сетке Orbiter.")
+    st.info("Раздел пустой и готов к привязке функционала.")
 
 st.markdown('</div>', unsafe_allow_html=True)
 
