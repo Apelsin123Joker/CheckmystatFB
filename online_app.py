@@ -3,34 +3,28 @@ import pandas as pd
 from datetime import datetime
 
 # =====================================================================
-# КОНФИГУРАЦИЯ СТРАНИЦЫ И ОТКЛЮЧЕНИЕ ДЕФОЛТНОГО САЙДБАРА
+# CONFIGURATION AND STYLING (ORBITER STYLE)
 # =====================================================================
 st.set_page_config(
     page_title="Orbiter Control Center",
     layout="wide",
-    initial_sidebar_state="collapsed" # Скрываем стандартное боковое меню
+    initial_sidebar_state="collapsed"
 )
 
-# Глубокая CSS-стилизация под интерфейс оригинального Orbiter
 st.markdown("""
     <style>
-        /* Полное отключение отступов Streamlit */
         .block-container {
             padding: 0rem !important;
             max-width: 100% !important;
         }
         div[data-testid="stSidebarCollapsedControl"] {
-            display: none !important; /* Убираем кнопку раскрытия сайдбара */
+            display: none !important;
         }
-        
-        /* Главный контейнер приложения */
         .stApp {
             background-color: #090b0e;
             color: #d1d4dc;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         }
-        
-        /* ЛЕВАЯ ПАНЕЛЬ УПРАВЛЕНИЯ (Копия Orbiter) */
         .orbiter-sidebar {
             background-color: #11141a;
             border-right: 1px solid #1c222d;
@@ -60,14 +54,10 @@ st.markdown("""
             margin: 20px 0 10px 5px;
             font-weight: 600;
         }
-        
-        /* РАБОЧАЯ ОБЛАСТЬ СПРАВА */
         .main-content {
-            margin-left: 260px; /* Отступ под левую панель */
+            margin-left: 260px;
             padding: 25px;
         }
-        
-        /* ВЕРХНЯЯ НАВИГАЦИЯ ВНУТРИ ТРЕКЕРА */
         .tracker-header {
             display: flex;
             align-items: center;
@@ -82,8 +72,6 @@ st.markdown("""
             color: #ffffff;
             margin-right: 20px;
         }
-        
-        /* Элементы ввода файлов */
         .upload-box {
             background-color: #11141a;
             border: 1px dashed #2d3648;
@@ -94,15 +82,14 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # =====================================================================
-# СЛУЖЕБНЫЕ НАСТРОЙКИ ДЛЯ МАТЧИНГА ТАБЛИЦ
+# COLUMN SETTINGS FOR FB DATA MATCHING
 # =====================================================================
 КОЛОНКА_ИМЯ_КАМПАНИИ_FB = "Название кампании"
 КОЛОНКА_РАСХОДЫ_FB = "Потрачено (USD)"
 
 # =====================================================================
-# ЛЕВАЯ ПАНЕЛЬ: ОТОБРАЖЕНИЕ СТРУКТУРЫ МЕНЮ ORBITER
+# SIDEBAR NAVIGATION PANEL
 # =====================================================================
-# Формируем HTML-код боковой панели с иконкой ноутбука в самом верху
 st.markdown("""
 <div class="orbiter-sidebar">
     <div class="sidebar-logo">💻 Orbiter CC</div>
@@ -133,12 +120,11 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # =====================================================================
-# ПРАВАЯ ЧАСТЬ: ОСНОВНАЯ РАБОЧАЯ ОБЛАСТЬ ТРЕКЕРА
+# MAIN WORKSPACE AREA
 # =====================================================================
-# Оборачиваем всю правую часть в блок с отступом, чтобы контент не налезал на меню
 st.markdown('<div class="main-content">', unsafe_allow_html=True)
 
-# --- ВЕРХНЯЯ СТРОКА НАВИГАЦИИ (Календарь и Поиск над таблицей) ---
+# Header Row
 st.markdown("""
 <div class="tracker-header">
     <span class="tracker-title">🛸 Трекер</span>
@@ -147,8 +133,8 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# Переносим выбор даты в правую рабочую зону наверх
-col_date, col_search, col_spacer = st.columns([2, 3, 4])
+# Date Picker & Search Filters
+col_date, col_search, _ = st.columns([2, 3, 5])
 with col_date:
     выбранная_дата = st.date_input("📅 Выберите период:", datetime.now(), label_visibility="collapsed").strftime("%Y-%m-%d")
 with col_search:
@@ -156,7 +142,7 @@ with col_search:
 
 st.markdown("<br>", unsafe_allow_html=True)
 
-# --- ЦЕНТРАЛЬНЫЙ БЛОК ДЛЯ ЗАГРУЗКИ ФАЙЛОВ (FB COST + РЕВЕНЮ ПАРТНЕРКИ) ---
+# Data Import Boxes
 st.markdown("### 📥 Импорт данных для сведения ROI")
 col_fb, col_pa = st.columns(2)
 
@@ -172,24 +158,20 @@ with col_pa:
 
 st.markdown("---")
 
-# --- ЛОГИКА ОБРАБОТКИ И ВЫВОДА ТАБЛИЦЫ ---
+# Main Processing Engine
 if uploaded_fb is not None and uploaded_pa is not None:
-    # Загружаем спенд FB
     df_fb = pd.read_excel(uploaded_fb)
     
-    # Загружаем доходы партнерки
     if uploaded_pa.name.endswith('.csv'):
         df_pa = pd.read_csv(uploaded_pa)
     else:
         df_pa = pd.read_excel(uploaded_pa)
         
-    # Базовый матчинг данных по именам кампаний
     if КОЛОНКА_ИМЯ_КАМПАНИИ_FB in df_fb.columns:
         df_fb = df_fb[[КОЛОНКА_ИМЯ_КАМПАНИИ_FB, КОЛОНКА_РАСХОДЫ_FB]].copy()
         df_fb.columns = ["CAMPAIGN", "COST"]
         df_fb = df_fb.groupby("CAMPAIGN", as_index=False)["COST"].sum()
         
-        # Определяем имена колонок партнерки (автоматический подбор)
         pa_name_col = "Campaign" if "Campaign" in df_pa.columns else df_pa.columns[0]
         pa_rev_col = "Revenue" if "Revenue" in df_pa.columns else df_pa.columns[1]
         
@@ -197,23 +179,17 @@ if uploaded_fb is not None and uploaded_pa is not None:
         df_pa.columns = ["CAMPAIGN", "REVENUE"]
         df_pa = df_pa.groupby("CAMPAIGN", as_index=False)["REVENUE"].sum()
         
-        # Полное объединение (Матчинг)
         df_final = pd.merge(df_fb, df_pa, on="CAMPAIGN", how="outer").fillna(0)
         
-        # Вычисляем профит и ROI
         df_final["PROFIT"] = df_final["REVENUE"] - df_final["COST"]
         df_final["ROI %"] = df_final.apply(lambda r: (r["PROFIT"] / r["COST"] * 100) if r["COST"] > 0 else 0, axis=1)
         
-        # Формируем структуру колонок один в один как в Orbiter
         df_final["STATUS PK"] = "🟢"
-        # Для имитации столбца "ОФФЕРЫ QL" склеиваем имя
-        df_final["ОФФЕРЫ QL"] = df_final["CAMPAIGN"].apply(lambda name: f"{name[:15]}... 100%")
+        df_final["ОФФЕРЫ QL"] = df_final["CAMPAIGN"].apply(lambda name: f"{str(name)[:15]}... 100%")
         
-        # Перестраиваем порядок столбцов в соответствии с эталоном Orbiter
-        df_final = df_final[["CAMPAIGN", "STATUS_PK", "ОФФЕРЫ QL", "COST", "REVENUE", "PROFIT", "ROI %"]]
+        df_final = df_final[["CAMPAIGN", "STATUS PK", "ОФФЕРЫ QL", "COST", "REVENUE", "PROFIT", "ROI %"]]
         df_final = df_final.round(2).sort_values(by="COST", ascending=False)
         
-        # Добавляем финальную строку TOTAL внизу таблицы
         total_cost = df_final["COST"].sum()
         total_revenue = df_final["REVENUE"].sum()
         total_profit = total_revenue - total_cost
@@ -230,21 +206,27 @@ if uploaded_fb is not None and uploaded_pa is not None:
         }])
         df_final = pd.concat([df_final, row_total], ignore_index=True)
         
-        # Отрисовка строгой таблицы аналитики
         st.write("### 📊 Сводный отчёт за выбранный период")
         st.dataframe(
             df_final,
             use_container_width=True,
             hide_index=True,
-        column_config={
-    "CAMPAIGN": st.column_config.TextColumn("CAMPAIGN"),
-    "STATUS PK": st.column_config.TextColumn("STATUS PK"),
-    "ОФФЕРЫ QL": st.column_config.TextColumn("ОФФЕРЫ QL"),
-    "COST": st.column_config.NumberColumn("COST", format="$%.2f"),
-    "REVENUE": st.column_config.NumberColumn("REVENUE", format="$%.2f"),
-    "PROFIT": st.column_config.NumberColumn("PROFIT", format="$%.2f"),
-    "ROI %": st.column_config.NumberColumn("ROI", format="%.1f%%")
-}
-)
+            column_config={
+                "CAMPAIGN": st.column_config.TextColumn("CAMPAIGN"),
+                "STATUS PK": st.column_config.TextColumn("STATUS PK"),
+                "ОФФЕРЫ QL": st.column_config.TextColumn("ОФФЕРЫ QL"),
+                "COST": st.column_config.NumberColumn("COST", format="$%.2f"),
+                "REVENUE": st.column_config.NumberColumn("REVENUE", format="$%.2f"),
+                "PROFIT": st.column_config.NumberColumn("PROFIT", format="$%.2f"),
+                "ROI %": st.column_config.NumberColumn("ROI", format="%.1f%%")
+            }
+        )
+    else:
+        st.error(f"В файле Facebook не найдена колонка расходов '{КОЛОНКА_ИМЯ_КАМПАНИИ_FB}'!")
+        
+elif uploaded_fb is not None or uploaded_pa is not None:
+    st.warning("📊 Система ожидает загрузки ОБОИХ файлов одновременно для автоматического сопоставления связок.")
 else:
-st.error(f"В файле Facebook не найдена колонка расходов '{КОЛОНКА_ИМЯ_КАМПАНИИ_FB}'!")
+    st.info("💡 Панель готова к работе. Загрузите файлы с расходами FB и доходами партнерки в поля выше.")
+
+st.markdown('</div>', unsafe_allow_html=True)
