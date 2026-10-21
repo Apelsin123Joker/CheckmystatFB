@@ -213,8 +213,8 @@ if st.session_state.current_page == "🎯 1. Трекер":
     </div>
     """, unsafe_allow_html=True)
     
-    # Переносим выбор даты наверх
-    col_date, col_search, _ = st.columns()
+    # Фикс тут: Явно указали создание 3-х колонок через передачу числа 3 в st.columns
+    col_date, col_search, _ = st.columns(3)
     with col_date:
         st.date_input("📅 Выберите период:", datetime.now(), label_visibility="collapsed")
     with col_search:
@@ -237,5 +237,3 @@ elif st.session_state.current_page == "🔗 Генератор ссылок":
 
 # --- ВСЕ ОСТАЛЬНЫЕ КНОПКИ (Универсальная заглушка) ---
 else:
-    st.title(f"🛠️ Раздел: {st.session_state.current_page}")
-
