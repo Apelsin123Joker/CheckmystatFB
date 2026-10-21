@@ -3,26 +3,35 @@ import pandas as pd
 from datetime import datetime
 
 # =====================================================================
-# 1. КОНФИГУРАЦИЯ СТРАНИЦЫ И СКРЫТИЕ ДЕФОЛТНОГО САЙДБАРА
+# 1. КОНФИГУРАЦИЯ СТРАНИЦЫ
 # =====================================================================
 st.set_page_config(
     page_title="Orbiter Control Center",
-    layout="wide",
-    initial_sidebar_state="collapsed"
+    layout="wide"
 )
 
-# Профессиональный строгий темный стиль Orbiter CC
+# Полный сброс стилей для точной копии темной панели Orbiter CC
 st.markdown("""
     <style>
+        /* Убираем стандартные элементы и отступы Streamlit */
         .block-container { padding: 0rem !important; max-width: 100% !important; }
-        div[data-testid="stSidebarCollapsedControl"] { display: none !important; }
+        header { display: none !important; }
+        
+        /* Главная темная тема */
         .stApp { background-color: #090b0e; color: #d1d4dc; font-family: -apple-system, sans-serif; }
         
-        /* Монолитная левая панель меню */
+        /* ЛЕВАЯ ФИКСИРОВАННАЯ ПАНЕЛЬ МЕНЮ */
         .orbiter-sidebar {
-            background-color: #11141a; border-right: 1px solid #1c222d;
-            padding: 20px 15px; height: 100vh; position: fixed;
-            left: 0; top: 0; width: 240px; z-index: 100; overflow-y: auto;
+            background-color: #11141a; 
+            border-right: 1px solid #1c222d;
+            padding: 20px 15px; 
+            height: 100vh; 
+            position: fixed;
+            left: 0; 
+            top: 0; 
+            width: 240px; 
+            z-index: 9999; 
+            overflow-y: auto;
         }
         .sidebar-logo { font-size: 18px; font-weight: 700; color: #ffffff; margin-bottom: 25px; }
         .menu-section-title { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #4c566a; margin: 18px 0 6px 5px; font-weight: 600; }
@@ -32,12 +41,12 @@ st.markdown("""
         .div-btn div button:hover { color: #00ff88 !important; background-color: #162221 !important; }
         .div-btn-active div button { background-color: #162221 !important; color: #00ff88 !important; border: none !important; text-align: left !important; padding: 7px 5px !important; font-size: 14px !important; font-weight: 600 !important; width: 100% !important; border-radius: 4px !important; }
         
-        /* Правая контентная зона */
+        /* Правая контентная зона с четким отступом от меню */
         .main-content { margin-left: 265px; padding: 25px; }
         .tracker-header { display: flex; align-items: center; gap: 20px; margin-bottom: 25px; border-bottom: 1px solid #1c222d; padding-bottom: 15px; }
         .tracker-title { font-size: 20px; font-weight: 600; color: #ffffff; }
         
-        /* Жесткое выравнивание кнопок загрузки в один ряд */
+        /* Выравнивание загрузчиков файлов в один ряд с поиском */
         div[data-testid="stColumn"] { display: flex; align-items: flex-end !important; }
         div[data-testid="stFileUploader"] { width: 100% !important; margin-top: 0px !important; padding-top: 0px !important; }
         div[data-testid="stFileUploaderDropzone"] { padding: 6px 10px !important; background-color: #11141a !important; border: 1px solid #1c222d !important; height: 42px !important; }
@@ -45,7 +54,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Глобальные имена колонок для мэтчинга отчетов
+# Имена колонок для мэтчинга отчетов
 КОЛОНКА_ИМЯ_КАМПАНИИ_FB = "Название кампании"
 КОЛОНКА_РАСХОДЫ_FB = "Потрачено (USD)"
 
