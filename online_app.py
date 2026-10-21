@@ -7,7 +7,7 @@ from datetime import datetime
 st.set_page_config(
     page_title="Darkneter Control Center",
     layout="wide",
-    initial_sidebar_state="collapsed" # Скрываем стандартный сайдбар Streamlit
+    initial_sidebar_state="collapsed"
 )
 
 # =====================================================================
@@ -15,23 +15,18 @@ st.set_page_config(
 # =====================================================================
 st.markdown("""
     <style>
-        /* Убираем стандартные отступы Streamlit для эффекта монолитного приложения */
         .block-container {
             padding: 0rem !important;
             max-width: 100% !important;
         }
         div[data-testid="stSidebarCollapsedControl"] {
-            display: none !important; /* Прячем кнопку раскрытия стандартного меню */
+            display: none !important;
         }
-        
-        /* Цветовая гамма Darkneter */
         .stApp {
             background-color: #090b0e;
             color: #d1d4dc;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         }
-        
-        /* ЛЕВАЯ ПАНЕЛЬ УПРАВЛЕНИЯ (Фиксированное меню) */
         .orbiter-sidebar {
             background-color: #11141a;
             border-right: 1px solid #1c222d;
@@ -58,8 +53,6 @@ st.markdown("""
             margin: 15px 0 5px 5px;
             font-weight: 600;
         }
-        
-        /* СТИЛИЗАЦИЯ ИНТЕРАКТИВНЫХ КНОПОК ПОД ДИЗАЙН ТРЕКЕРА */
         .div-btn div button {
             background-color: transparent !important;
             color: #8f9aa9 !important;
@@ -86,10 +79,8 @@ st.markdown("""
             width: 100% !important;
             border-radius: 4px !important;
         }
-        
-        /* ПРАВАЯ РАБОЧАЯ ЗОНА КОНТЕНТА */
         .main-content {
-            margin-left: 260px; /* Отступ справа от фиксированного меню */
+            margin-left: 260px;
             padding: 25px;
         }
         .tracker-header {
@@ -111,7 +102,6 @@ st.markdown("""
 # =====================================================================
 # 3. УПРАВЛЕНИЕ СОСТОЯНИЕМ СТРАНИЦ (Session State)
 # =====================================================================
-# Программа запоминает, на какой странице находится пользователь
 if "current_page" not in st.session_state:
     st.session_state.current_page = "🎯 1. Трекер"
 
@@ -124,7 +114,7 @@ with st.container():
     st.markdown('<div style="color: #616e88; font-size: 13px; margin-top:-20px; margin-bottom:20px;">🚨 Control Center</div>', unsafe_allow_html=True)
     st.markdown('<div style="border-top: 1px solid #1c222d; margin-bottom: 15px;"></div>', unsafe_allow_html=True)
     
-    # --- Кнопка ТРЕКЕР ---
+    # Кнопка ТРЕКЕР
     if st.session_state.current_page == "🎯 1. Трекер":
         st.markdown('<div class="div-btn-active">', unsafe_allow_html=True)
         st.button("🎯 1. Трекер", key="btn_tracker")
@@ -136,7 +126,7 @@ with st.container():
             st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
 
-    # --- Раздел КАМПАНИИ ---
+    # Раздел КАМПАНИИ
     st.markdown('<div class="menu-section-title">KAМПАНИИ</div>', unsafe_allow_html=True)
     pages_campaigns = ["🔑 Ключи", "📊 Тоталы", "🔗 Генератор ссылок"]
     for p in pages_campaigns:
@@ -151,7 +141,7 @@ with st.container():
                 st.rerun()
             st.markdown('</div>', unsafe_allow_html=True)
 
-    # --- Раздел КРЕАТИВЫ ---
+    # Раздел КРЕАТИВЫ
     st.markdown('<div class="menu-section-title">КРЕАТИВЫ</div>', unsafe_allow_html=True)
     pages_creatives = ["🎬 Creative Tracker", "🎨 Creative Lab"]
     for p in pages_creatives:
@@ -166,7 +156,7 @@ with st.container():
                 st.rerun()
             st.markdown('</div>', unsafe_allow_html=True)
 
-    # --- Раздел META LAUNCH ---
+    # Раздел META LAUNCH
     st.markdown('<div class="menu-section-title">META LAUNCH</div>', unsafe_allow_html=True)
     pages_meta = ["🎴 Campaign Cards", "🚀 Лаунчер", "🛡️ БМ и защита", "📂 Библиотека креативов"]
     for p in pages_meta:
@@ -181,7 +171,7 @@ with st.container():
                 st.rerun()
             st.markdown('</div>', unsafe_allow_html=True)
 
-    # --- Раздел УТИЛИТЫ ---
+    # Раздел УТИЛИТЫ
     st.markdown('<div class="menu-section-title">УТИЛИТЫ</div>', unsafe_allow_html=True)
     pages_utils = ["👥 Пользователи", "🔔 Напоминания"]
     for p in pages_utils:
@@ -203,7 +193,6 @@ with st.container():
 # =====================================================================
 st.markdown('<div class="main-content">', unsafe_allow_html=True)
 
-# --- ЭКРАН 1: ТРЕКЕР ---
 if st.session_state.current_page == "🎯 1. Трекер":
     st.markdown("""
     <div class="tracker-header">
@@ -213,7 +202,6 @@ if st.session_state.current_page == "🎯 1. Трекер":
     </div>
     """, unsafe_allow_html=True)
     
-    # Фикс тут: Явно указали создание 3-х колонок через передачу числа 3 в st.columns
     col_date, col_search, _ = st.columns(3)
     with col_date:
         st.date_input("📅 Выберите период:", datetime.now(), label_visibility="collapsed")
@@ -223,17 +211,19 @@ if st.session_state.current_page == "🎯 1. Трекер":
     st.markdown("<br><br>", unsafe_allow_html=True)
     st.info("🦴 [Блок 1 Успешно развернут] Скелет Трекера готов. На следующем шаге мы наполним его логикой загрузки файлов.")
 
-# --- ЭКРАН 2: ЛАУНЧЕР ---
 elif st.session_state.current_page == "🚀 Лаунчер":
     st.title("🚀 Автоматический Лаунчер Кампаний")
     st.write("Скелет страницы Meta Launch готов.")
     st.info("Здесь будет логика массового запуска аккаунтов Facebook.")
 
-# --- ЭКРАН 3: ГЕНЕРАТОР ССЫЛОК ---
 elif st.session_state.current_page == "🔗 Генератор ссылок":
     st.title("🔗 Конструктор потоков (TDS)")
     st.write("Скелет страницы Генератора готов.")
     st.info("Здесь мы запрограммируем создание ссылок и фильтрацию ботов.")
 
-# --- ВСЕ ОСТАЛЬНЫЕ КНОПКИ (Универсальная заглушка) ---
 else:
+    st.title(f"🛠️ Раздел: {st.session_state.current_page}")
+    st.write("Скелет страницы успешно создан.")
+    st.info("Данный блок будет наполняться функционалом на следующих этапах разработки.")
+
+st.markdown('</div>', unsafe_allow_html=True)
